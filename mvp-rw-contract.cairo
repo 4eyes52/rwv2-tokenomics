@@ -3,14 +3,16 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.starknet.common.syscalls import get_caller_address, get_block_timestamp, get_block_number, call_contract
 
-# Constants for inflation and rewards.
+// Constants for rewards, inflation, and allocation splits.
 const REWARD_PRECISION = 1000000;
-const BLOCKS_PER_YEAR = 31536000;  // Adjust as needed (e.g., if 1 block per second).
+const BLOCKS_PER_YEAR = 31536000;  // e.g., 1 block per second.
 const INFLATION_RATE_BP = 500;      // 500 basis points = 5% annual inflation.
+const STAKER_SHARE_BP = 7000;       // 70% of inflation goes to stakers.
+const BUILDER_SHARE_BP = 3000;      // 30% of inflation goes to builder incentives.
 
-#############################
-# Storage Variables: Token
-#############################
+//////////////////////////////
+// Storage Variables: Token
+//////////////////////////////
 @storage_var
 func name() -> (res: felt) {}
 @storage_var
@@ -26,9 +28,9 @@ func owner() -> (res: felt) {}
 @storage_var
 func burn_rate() -> (res: felt) {}
 
-#############################
-# Storage Variables: Staking
-#############################
+//////////////////////////////
+// Storage Variables: Staking
+//////////////////////////////
 @storage_var
 func stake_balance(address: felt) -> (res: felt) {}
 @storage_var
@@ -38,27 +40,35 @@ func stake_last_update(address: felt) -> (res: felt) {}
 @storage_var
 func reward_rate() -> (res: felt) {}
 
-#############################
-# Storage Variables: Oracle Integration
-#############################
+//////////////////////////////
+// Storage Variables: Oracle Integration
+//////////////////////////////
 @storage_var
 func oracle_address() -> (res: felt) {}
 
-#############################
-# Storage Variables: LORDS Integration
-#############################
+//////////////////////////////
+// Storage Variables: LORDS Integration
+//////////////////////////////
 @storage_var
 func lords_token_address() -> (res: felt) {}
 
-#############################
-# Storage Variable: Inflation Timing (using block numbers)
-#############################
+//////////////////////////////
+// Storage Variable: Inflation Timing (by block)
+//////////////////////////////
 @storage_var
 func last_inflation_block() -> (res: felt) {}
 
-#############################
-# Initialization Function
-#############################
+//////////////////////////////
+// New Storage: Reward Pools
+//////////////////////////////
+@storage_var
+func staker_reward_pool() -> (res: felt) {}
+@storage_var
+func builder_incentive_pool() -> (res: felt) {}
+
+//////////////////////////////
+// Initialization Function
+//////////////////////////////
 #[external]
 func initialize{
     syscall_ptr : felt*, 
@@ -78,19 +88,19 @@ func initialize{
     total_supply.write(initial_supply,);
     balance_of.write(owner_, initial_supply,);
     owner.write(owner_,);
-    # Set a default burn rate in basis points (e.g., 50 = 0.5%).
+    // Set a default burn rate (e.g., 50 = 0.5%).
     burn_rate.write(50,);
-    # Set the staking reward rate.
     reward_rate.write(reward_rate_,);
-    # Initialize the last inflation update using the current block number.
     let current_block = get_block_number();
     last_inflation_block.write(current_block,);
+    staker_reward_pool.write(0,);
+    builder_incentive_pool.write(0,);
     return ();
 }
 
-#############################
-# Token Functions
-#############################
+//////////////////////////////
+// Token Functions
+//////////////////////////////
 #[external]
 func transfer{
     syscall_ptr : felt*, 
@@ -102,10 +112,9 @@ func transfer{
 ) -> (success: felt) {
     let caller = get_caller_address();
     let (sender_balance) = balance_of.read(caller);
-    # Ensure the sender has enough balance.
     assert sender_balance >= amount, 'Insufficient balance';
-    # Read current burn rate (basis points, denominator = 10000).
     let (rate) = burn_rate.read();
+    // Calculate burn fee (basis points; denominator = 10000).
     let burn_fee = (amount * rate) / 10000;
     let transfer_amount = amount - burn_fee;
     balance_of.write(caller, sender_balance - amount);
@@ -135,9 +144,9 @@ func mint{
     return ();
 }
 
-#############################
-# Oracle Integration Functions
-#############################
+//////////////////////////////
+// Oracle Integration Functions
+//////////////////////////////
 #[external]
 func set_oracle_address{
     syscall_ptr : felt*, 
@@ -168,9 +177,9 @@ func update_burn_rate_from_oracle{
     return ();
 }
 
-#############################
-# LORDS Integration Functions
-#############################
+//////////////////////////////
+// LORDS Integration Functions
+//////////////////////////////
 #[external]
 func set_lords_token_address{
     syscall_ptr : felt*, 
@@ -195,25 +204,21 @@ func mint_from_lords{
     amount: felt
 ) -> () {
     let caller = get_caller_address();
-    # Retrieve the LORDS token contract address.
     let (lord_addr) = lords_token_address.read();
-    # Prepare calldata for the LORDS token burn function.
-    # Assuming the LORDS token's burn function takes (caller, amount) as parameters.
     alloc_locals;
     let calldata = [caller, amount];
     let (res) = call_contract(
          contract_address=lord_addr,
-         function_selector = 0xDEADBEEF,  # Replace with actual burn function selector.
+         function_selector = 0xDEADBEEF,  // Replace with the actual burn function selector.
          calldata=calldata
     );
-    # After burning LORDS tokens 1:1, mint the same amount of RW tokens to the caller.
     mint(recipient=caller, amount=amount);
     return ();
 }
 
-#############################
-# Staking Functions
-#############################
+//////////////////////////////
+// Staking Functions (Modified)
+//////////////////////////////
 func update_reward{
     syscall_ptr : felt*, 
     pedersen_ptr : HashBuiltin*, 
@@ -230,7 +235,7 @@ func update_reward{
     let delta = current_time - last;
     let (balance) = stake_balance.read(user);
     let (rate) = reward_rate.read();
-    # additional_reward = (balance * delta * rate) / REWARD_PRECISION.
+    // additional_reward = (balance * delta * rate) / REWARD_PRECISION.
     let additional_reward = (balance * delta * rate) / REWARD_PRECISION;
     let (current_reward) = stake_reward.read(user);
     stake_reward.write(user, current_reward + additional_reward,);
@@ -286,17 +291,38 @@ func claim_rewards{
     let current_time = get_block_timestamp();
     update_reward(user=caller, current_time=current_time);
     let (reward) = stake_reward.read(caller);
+    // Reset the staker's accumulated reward.
     stake_reward.write(caller, 0);
-    let (current_supply) = total_supply.read();
-    total_supply.write(current_supply + reward);
+    // Ensure the reward pool has enough tokens.
+    let (pool_balance) = staker_reward_pool.read();
+    assert pool_balance >= reward, 'Not enough rewards in staker pool';
+    staker_reward_pool.write(pool_balance - reward);
     let (caller_balance) = balance_of.read(caller);
     balance_of.write(caller, caller_balance + reward);
     return ();
 }
 
-#############################
-# Inflation Function (5% annualized per block rate)
-#############################
+// Builder incentives claim function.
+// In a real implementation, eligibility would be determined by a voting mechanism.
+#[external]
+func claim_builder_incentives{
+    syscall_ptr : felt*, 
+    pedersen_ptr : HashBuiltin*, 
+    range_check_ptr
+}() -> () {
+    let caller = get_caller_address();
+    // For demonstration, assume the caller is eligible.
+    let (incentive) = builder_incentive_pool.read();
+    builder_incentive_pool.write(0);
+    let (caller_balance) = balance_of.read(caller);
+    balance_of.write(caller, caller_balance + incentive);
+    return ();
+}
+
+//////////////////////////////
+// Inflation Function (Modified)
+// Inflation now allocates new supply to staker rewards and builder incentives.
+//////////////////////////////
 #[external]
 func apply_inflation{
     syscall_ptr : felt*, 
@@ -305,7 +331,7 @@ func apply_inflation{
 }() -> () {
     let caller = get_caller_address();
     let (current_owner) = owner.read();
-    # Only the owner can trigger inflation.
+    // Only the owner can trigger inflation.
     assert caller = current_owner, 'Not owner';
     let current_block = get_block_number();
     let (last_block) = last_inflation_block.read();
@@ -315,9 +341,17 @@ func apply_inflation{
     }
     let blocks_elapsed = current_block - last_block;
     let (current_supply) = total_supply.read();
-    # additional_supply = (current_supply * INFLATION_RATE_BP * blocks_elapsed) / (10000 * BLOCKS_PER_YEAR)
+    // Calculate additional supply based on per-block inflation.
     let additional_supply = (current_supply * INFLATION_RATE_BP * blocks_elapsed) / (10000 * BLOCKS_PER_YEAR);
-    mint(recipient=current_owner, amount=additional_supply);
+    // Increase total supply.
+    total_supply.write(current_supply + additional_supply);
+    // Split the new supply between staker rewards and builder incentives.
+    let staker_allocation = (additional_supply * STAKER_SHARE_BP) / 10000;
+    let builder_allocation = additional_supply - staker_allocation;  // Alternatively, use BUILDER_SHARE_BP.
+    let (current_staker_pool) = staker_reward_pool.read();
+    staker_reward_pool.write(current_staker_pool + staker_allocation);
+    let (current_builder_pool) = builder_incentive_pool.read();
+    builder_incentive_pool.write(current_builder_pool + builder_allocation);
     last_inflation_block.write(current_block,);
     return ();
 }
