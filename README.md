@@ -1,8 +1,4 @@
-# Realms World v2 Tokenomics
 
-Realms World is a decentralized gaming network designed to support numerous games. The Realms World token (**$RW**) serves as the foundational asset powering this ecosystem. This repository contains the MVP smart contract implementation for Realms World tokenomics, written in **Cairo 2** for deployment on **StarkNet**.
-
----
 
 ## Overview
 
