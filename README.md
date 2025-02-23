@@ -18,8 +18,8 @@ The Realms World v2 Tokenomics contract implements an ERC-20–style token with 
 - **Oracle Integration:**  
   A designated oracle address can update the burn rate to maintain optimal tokenomics based on network activity.
   
-- **$LORDS Integration:**  
-  Users can burn $LORDS tokens in a 1:1 burn-to-mint mechanism to receive new $RW tokens, linking the performance of both tokens.
+- **$LORDS Burn:**  
+  Users  burn $LORDS tokens in a 1:1 burn-to-mint mechanism to receive new $RW tokens for initial token distribution.
 
 ## Key Features
 
@@ -40,21 +40,10 @@ The Realms World v2 Tokenomics contract implements an ERC-20–style token with 
 
 ## Repository Structure
 
-- **Contract Code:**  
-  All Cairo source files (.cairo) implementing the token, inflation, staking, oracle, and $LORDS integration logic.
-  
-- **Documentation:**  
-  Inline comments and design notes explain the core tokenomics model and provide guidance for further development and auditing.
 
 ## Getting Started
 
-1. **Deploying on StarkNet:**  
-   Follow the instructions in the repository to compile and deploy the contract on StarkNet.
-
-2. **Interacting with the Contract:**  
-   Use tools like starknet.js or CLI tools provided by StarkWare to interact with the contract functions, including transfers, staking operations, inflation updates, and oracle calls.
-
-3. **Customization:**  
+1. **Customization:**  
    Adjust configuration constants (such as `INFLATION_RATE_BP`, `BLOCKS_PER_YEAR`, and `REWARD_PRECISION`) to suit your network's parameters and desired tokenomics.
 
 ## Future Enhancements
