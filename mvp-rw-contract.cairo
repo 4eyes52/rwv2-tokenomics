@@ -1,15 +1,15 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.starknet.common.syscalls import get_caller_address, get_block_timestamp, get_block_number, call_contract
+from starkware.starknet.common.syscalls import get_caller_address, get_block_timestamp, call_contract
 
-// Constants for rewards, inflation, and allocation splits.
+// Constants
 const REWARD_PRECISION = 1000000;
-const BLOCKS_PER_YEAR = 31536000;  // 1 block per second estimate.
+const SECONDS_PER_YEAR = 31536000;  // Standard year in seconds.
 const INFLATION_RATE_BP = 500;      // 500 basis points = 5% annual inflation.
-const STAKER_SHARE_BP = 7000;       // 70% of inflation goes to stakers.
-const BUILDER_SHARE_BP = 3000;      // 30% of inflation goes to builders.
-const MAX_BURN_RATE = 500;          // Max burn rate = 5% (in basis points).
+const STAKER_SHARE_BP = 7000;       // 70% of inflation to stakers.
+const BUILDER_SHARE_BP = 3000;      // 30% to builders.
+const MAX_BURN_RATE = 500;          // Max burn rate = 5%.
 const MIN_BURN_RATE = 10;           // Min burn rate = 0.1%.
 
 //////////////////////////////
@@ -47,10 +47,10 @@ func oracle_address() -> (res: felt) {}
 func lords_token_address() -> (res: felt) {}
 
 //////////////////////////////
-// Storage Variable: Inflation Timing (by block)
+// Storage Variables: Inflation Timing (Timestamp-Based)
 //////////////////////////////
 @storage_var
-func last_inflation_block() -> (res: felt) {}
+func last_inflation_timestamp() -> (res: felt) {}
 
 //////////////////////////////
 // Storage Variables: Reward Pools
@@ -76,35 +76,73 @@ func initialize{
     balance_of.write(owner_, initial_supply,);
     owner.write(owner_,);
     burn_rate.write(50,);  // Default burn rate: 0.5%.
-    let current_block = get_block_number();
-    last_inflation_block.write(current_block,);
+    let current_time = get_block_timestamp();
+    last_inflation_timestamp.write(current_time,);
     staker_reward_pool.write(0,);
     builder_incentive_pool.write(0,);
     return ();
 }
 
 //////////////////////////////
-// Security Improvements in Core Functions
+// Staking Functionality
 //////////////////////////////
 
-// ✅ Secure Burn Rate Update (with max/min limits)
+// ✅ Staking Tokens
 #[external]
-func update_burn_rate_from_oracle{
+func stake{
     syscall_ptr : felt*, 
     pedersen_ptr : HashBuiltin*, 
     range_check_ptr
 }(
-    new_rate: felt
+    amount: felt
 ) -> () {
     let caller = get_caller_address();
-    let (oracle_addr) = oracle_address.read();
-    assert caller = oracle_addr, 'Unauthorized oracle';
-    assert new_rate >= MIN_BURN_RATE && new_rate <= MAX_BURN_RATE, 'Burn rate out of range';
-    burn_rate.write(new_rate,);
+    let current_time = get_block_timestamp();
+
+    // Ensure user has enough balance
+    let (caller_balance) = balance_of.read(caller);
+    assert caller_balance >= amount, 'Insufficient balance';
+
+    // Update staker balance
+    balance_of.write(caller, caller_balance - amount);
+    let (current_stake) = stake_balance.read(caller);
+    stake_balance.write(caller, current_stake + amount);
+
+    // Update last reward update timestamp
+    stake_last_update.write(caller, current_time);
+
     return ();
 }
 
-// ✅ Secure Staker Reward Claim (Caps claims to available pool)
+// ✅ Unstaking Tokens
+#[external]
+func unstake{
+    syscall_ptr : felt*, 
+    pedersen_ptr : HashBuiltin*, 
+    range_check_ptr
+}(
+    amount: felt
+) -> () {
+    let caller = get_caller_address();
+    let current_time = get_block_timestamp();
+
+    let (staked_amount) = stake_balance.read(caller);
+    assert staked_amount >= amount, 'Not enough staked balance';
+
+    // Deduct staked amount
+    stake_balance.write(caller, staked_amount - amount);
+
+    // Transfer unstaked amount back to balance
+    let (caller_balance) = balance_of.read(caller);
+    balance_of.write(caller, caller_balance + amount);
+
+    // Update last update timestamp
+    stake_last_update.write(caller, current_time);
+
+    return ();
+}
+
+// ✅ Claim Staking Rewards
 #[external]
 func claim_rewards{
     syscall_ptr : felt*, 
@@ -117,17 +155,17 @@ func claim_rewards{
     
     let claimable_amount = if reward > pool_balance { pool_balance } else { reward };
 
-    // Deduct from reward pool
     staker_reward_pool.write(pool_balance - claimable_amount);
     stake_reward.write(caller, reward - claimable_amount);
 
-    // Transfer rewards
     let (caller_balance) = balance_of.read(caller);
     balance_of.write(caller, caller_balance + claimable_amount);
     return ();
 }
 
-// ✅ Secure Inflation Mechanism (Prevent over-minting)
+//////////////////////////////
+// Secure Inflation Mechanism (Time-Based)
+//////////////////////////////
 #[external]
 func apply_inflation{
     syscall_ptr : felt*, 
@@ -138,14 +176,15 @@ func apply_inflation{
     let (current_owner) = owner.read();
     assert caller = current_owner, 'Not owner';
 
-    let current_block = get_block_number();
-    let (last_block) = last_inflation_block.read();
-    assert current_block > last_block + BLOCKS_PER_YEAR / 1000, "Inflation already applied recently";
+    let current_time = get_block_timestamp();
+    let (last_time) = last_inflation_timestamp.read();
+    
+    assert current_time > last_time + SECONDS_PER_YEAR / 100, "Inflation already applied recently";
 
-    let blocks_elapsed = current_block - last_block;
     let (current_supply) = total_supply.read();
+    let seconds_elapsed = current_time - last_time;
 
-    let additional_supply = (current_supply * INFLATION_RATE_BP * blocks_elapsed) / (10000 * BLOCKS_PER_YEAR);
+    let additional_supply = (current_supply * INFLATION_RATE_BP * seconds_elapsed) / (10000 * SECONDS_PER_YEAR);
 
     total_supply.write(current_supply + additional_supply);
 
@@ -155,37 +194,13 @@ func apply_inflation{
     staker_reward_pool.write(staker_reward_pool.read() + staker_allocation);
     builder_incentive_pool.write(builder_incentive_pool.read() + builder_allocation);
 
-    last_inflation_block.write(current_block,);
+    last_inflation_timestamp.write(current_time,);
     return ();
 }
 
-// ✅ Secure LORDS Burn-to-Mint (Ensures burn confirmation)
-#[external]
-func mint_from_lords{
-    syscall_ptr : felt*, 
-    pedersen_ptr : HashBuiltin*, 
-    range_check_ptr
-}(
-    amount: felt
-) -> () {
-    let caller = get_caller_address();
-    let (lord_addr) = lords_token_address.read();
-    let calldata = [caller, amount];
-
-    let (res) = call_contract(
-         contract_address=lord_addr,
-         function_selector = 0xDEADBEEF,  // Replace with the real burn function selector
-         calldata=calldata
-    );
-
-    assert res == 1, "Burn failed";  // Ensure successful burn before minting
-
-    let (caller_balance) = balance_of.read(caller);
-    balance_of.write(caller, caller_balance + amount);
-    return ();
-}
-
-// ✅ Secure Builder Incentives (Prevents governance attacks)
+//////////////////////////////
+// Secure Governance-Based Builder Incentives
+//////////////////////////////
 #[external]
 func claim_builder_incentives{
     syscall_ptr : felt*, 
