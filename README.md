@@ -70,9 +70,3 @@ The contract includes several **security features**:
 - **Governance-Protected Builder Incentives**  
   Mechanisms are in place to **prevent governance attacks** on builder incentives, ensuring **fair distribution**.
 
----
-
-## Deployment
-
-The contract is written in **Cairo 2** and is intended for deployment on the **StarkNet network**.  
-Ensure that you have the appropriate **development environment and dependencies** set up before deployment.
