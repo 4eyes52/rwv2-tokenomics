@@ -1,140 +1,133 @@
-# Realms World Tokenomics Design
+# **Realms World Tokenomics Design**
 
-Realms World is a decentralized gaming network designed to support hundreds or thousands of games, each with its own economy. The Realms World token (**$RW**) is the foundational asset that powers the ecosystem.
-
----
-
-## 1. Overview
-
-- **Project Name:** Realms World
-- **Core Token:** $RW
-- **Purpose:**
-  - Serve as the underlying liquidity token for all game-specific tokens.
-  - Facilitate decentralized exchange (DEX) liquidity and cross-game asset exchange.
-  - Enable transaction fee settlements, staking rewards, and various in-game incentives.
+Realms World is a **decentralized gaming network** designed to support hundreds or thousands of games, each with its own economy. The **Realms World token ($RW)** serves as the foundational asset that powers the ecosystem.
 
 ---
 
-## 2. Token Overview
+## **1. Overview**
+- **Project Name:** Realms World  
+- **Core Token:** $RW  
+- **Purpose:**  
+  - Serve as the **underlying liquidity token** for all game-specific tokens.  
+  - Facilitate **decentralized exchange (DEX) liquidity** and cross-game asset exchange.  
+  - Enable **staking rewards, governance participation, and incentive distribution.**  
 
-- **Token Name:** $RealmsWorld (or an alternative name as desired)
-- **Ticker:** RW
-- **Token Type:** ERC-20 (compatible with StarkNet)
+---
+
+## **2. Token Overview**
+- **Token Name:** $RealmsWorld  
+- **Ticker:** RW  
+- **Token Type:** ERC-20 (StarkNet compatible)  
 - **Utility:**
-  - **Liquidity:** Used as a liquidity pair for game-specific tokens.
-  - **Transaction Fees:** Serves as the medium for fee settlements across the network.
-  - **Staking:** Provides rewards and security incentives.
-  - **Governance:** May be used for voting on network or game-specific proposals.
+  - **Liquidity:** Used as a liquidity pair for game-specific tokens.  
+  - **Transaction Fees:** Medium for fee settlements across the network.  
+  - **Staking:** Earn rewards by locking $RW tokens.  
+  - **Governance:** May be used for **voting on network** or **game-specific proposals**.  
 
 ---
 
-## 3. Supply & Distribution
+## **3. Supply & Distribution**
+- **Supply Model:** Inflationary with Burns  
+- **Initial Circulating Supply:** 200,000,000 RW  
+- **Emission Schedule:**  
+  - **Time-Based Inflation:** Adjusted based on elapsed time instead of block count.  
+  - **Annualized Inflation Rate:** 5% per year, dynamically adjusted.  
 
-- **Supply Model:** Inflationary with Burns
-- **Initial Circulating Supply:** 200,000,000 RW
-- **Emission Schedule:**
-  - **Dynamic Inflation:** Adjusted based on network activity.
-  - **Per-Block Inflation:** Annualized at 5% via a per-block mechanism.
-- **Burn Mechanism:**
-  - **Adaptive Burn:** A percentage of tokens is burned during transfers.
-  - **Oracle Integration:** The burn rate is updated dynamically by a designated oracle.
-- **$LORDS Token Burn:**
-  - **1:1 Burn-to-Mint:** Burning $LORDS tokens mints an equivalent amount of $RW.
-
----
-
-## 4. Network Functionality & Token Utility
-
-- **Game-Specific Tokens:**
-  - Each game can launch its own ERC-20 token.
-  - These tokens are bonded with $RW for liquidity and stability.
-- **Demand Drivers:**
-  - **DEX Usage:** $RW is required to swap between game tokens.
-  - **Transaction Fees:** Fees generated within the ecosystem are paid in $RW.
-  - **Cross-Game Economy:** $RW enables asset exchange across various games.
+### **Burn Mechanism**
+- **Adaptive Burn:** A percentage of tokens is **burned during transfers**.  
+- **Oracle Integration:** The **burn rate is updated dynamically** by a designated oracle.  
+- **$LORDS Token Burn:**  
+  - **1:1 Burn-to-Mint:** Burning **$LORDS tokens** mints an **equivalent amount of $RW**.  
 
 ---
 
-## 5. Inflation & Deflation Mechanics
+## **4. Network Functionality & Token Utility**
+### **Game-Specific Tokens**
+- Each game can **launch its own ERC-20 token**.  
+- These tokens are **bonded with $RW for liquidity and stability**.  
 
-### Inflationary Mechanisms
-
-- **Dynamic Inflation (Per Block):**
-  - The contract calculates additional token supply based on the number of blocks elapsed since the last inflation update.
-  - **Formula:**
-
-## Example Calculation:
-
-## Example Calculation:
-
-- **Assume** `current_supply = 200,000,000 RW`
-- **Assume** `blocks_elapsed = 1000`
-- **Assume** `BLOCKS_PER_YEAR = 31,536,000`
-- **Since** `INFLATION_RATE_BP = 500`, the calculation becomes:
-Thus, for every **1000 blocks**, around **317 RW tokens** would be minted under the **5% annualized inflation model**.
-
-- **Constants:**
-  - **INFLATION_RATE_BP:** 500 (5% annual inflation in basis points)
-  - **BLOCKS_PER_YEAR:** Set based on expected block frequency (e.g., 31,536,000 for 1 block per second)
-
-### Deflationary Mechanisms
-
-- **Adaptive Burn:**
-  - A portion of tokens is burned during each transfer.
-  - The burn rate is updated dynamically by a designated oracle based on off-chain network metrics.
-- **DEX & Liquidity Fee Burns:**
-  - Portions of fees from token swaps and liquidity operations are burned to help maintain scarcity.
+### **Demand Drivers**
+- **DEX Usage:** $RW is required for swapping between game tokens.  
+- **Transaction Fees:** Fees generated within the ecosystem are paid in $RW.  
+- **Cross-Game Economy:** $RW facilitates **asset exchange across multiple games**.  
 
 ---
 
-## 6. Oracle Integration
+## **5. Inflation & Deflation Mechanics**
+### **Inflationary Mechanisms**
+- **Time-Based Inflation** (instead of block-based)  
+- The contract calculates **additional token supply based on the elapsed time** since the last inflation update.
 
-- **Purpose:**
-  - Automatically adjust key parameters (e.g., burn rate) based on real-world, off-chain metrics.
-- **Mechanism:**
-  - A designated `oracle_address` is set by the owner.
-  - The oracle can call `update_burn_rate_from_oracle` to update the burn rate.
-- **Security:**
-  - Only the trusted oracle can update these parameters.
+#### **Formula:**
+additional_supply = (current_supply * INFLATION_RATE_BP * seconds_elapsed) / (10000 * SECONDS_PER_YEAR)
+### **Example Calculation:**
+- **Assume** `current_supply = 200,000,000 RW`  
+- **Assume** `seconds_elapsed = 1,000,000`  
+- **Assume** `SECONDS_PER_YEAR = 31,536,000`  
+- **Since** `INFLATION_RATE_BP = 500`, we get:
 
----
+additional_supply = (200,000,000 * 500 * 1,000,000) / (10000 * 31,536,000) additional_supply = (100,000,000,000) / (315,360,000,000) additional_supply ≈ 317 RW
 
-## 7. Staking & Rewards
+**Thus, for every 1,000,000 seconds, approximately 317 RW tokens are minted** under the **5% annualized inflation model**.
 
-- **Staking Functions:**
-  - **Stake:** Users can lock $RW tokens to earn rewards.
-  - **Unstake:** Withdraw staked tokens.
-  - **Claim Rewards:** Accumulate and claim rewards based on staking duration and the defined reward rate.
-- **Reward Calculation:**
-  - Uses a constant (`REWARD_PRECISION`) to represent fractional rewards.
-  - Rewards are accrued over time and calculated based on the staked amount and elapsed time.
-
----
-
-## 8. LORDS Integration
-
-- **1:1 Burn-to-Mint Mechanism:**
-  - Users can burn $LORDS tokens via the `mint_from_lords` function.
-  - The contract calls an external LORDS token contract’s `burn` function.
-  - Upon successful burning, the same amount of $RW tokens is minted for the user.
+### **Deflationary Mechanisms**
+- **Adaptive Burn:**  
+  - A **portion of tokens is burned** during each transfer.  
+  - The **burn rate is dynamically adjusted** by a designated oracle.  
+- **DEX & Liquidity Fee Burns:**  
+  - A portion of fees from **token swaps and liquidity operations is burned**, reducing supply.  
 
 ---
 
-## 9. Treasury Management
+## **6. Oracle Integration**
+### **Purpose**
+- The oracle **automatically adjusts key parameters** (e.g., burn rate) based on **off-chain data**.  
 
-- **Ecosystem Grants:**
-  - Allocate $RW tokens to promising games and projects.
-- **Revenue Allocation:**
-  - A portion (e.g., 30%) of network-wide transaction fees is allocated to the treasury for further development and ecosystem growth.
+### **Mechanism**
+- A **designated `oracle_address` is set by the owner**.  
+- The oracle can call **`update_burn_rate_from_oracle`** to update the burn rate.  
+
+### **Security**
+- **Only a trusted oracle** can update these parameters.  
+- The burn rate **cannot exceed the max/min predefined limits** (`0.1% - 5%`).  
 
 ---
 
-## 10. Sustainability & Long-Term Planning
+## **7. Staking & Rewards**
+### **Staking Functions**
+- **Stake:** Users can **lock $RW tokens** to earn rewards.  
+- **Unstake:** Users can **withdraw staked tokens** at any time.  
+- **Claim Rewards:** Users can **claim accrued rewards** based on staking duration.  
 
-- **Dynamic Emissions:**
-  - Adjust inflation and token issuance based on network activity.
-- **Interoperability:**
-  - $RW serves as the liquidity pair for multiple game-specific tokens, ensuring cross-game functionality.
-- **Decentralized Infrastructure:**
-  - Supports fair, scalable, and community-governed gaming ecosystems.
- 
+### **Reward Calculation**
+- Uses a constant (`REWARD_PRECISION`) to represent **fractional rewards**.  
+- Rewards are **proportional to the staked amount** and the **time elapsed**.  
+- **70% of newly minted tokens go to stakers** via the **staker reward pool**.  
+
+---
+
+## **8. $LORDS Integration**
+### **1:1 Burn-to-Mint Mechanism**
+- Users can **burn $LORDS tokens** via the `mint_from_lords` function.  
+- The contract **calls an external $LORDS contract** to verify the burn.  
+- Upon successful burning, the **same amount of $RW tokens is minted**.  
+
+---
+
+## **9. Treasury Management**
+### **Ecosystem Grants**
+- The **treasury can allocate $RW** to **promising games** built on Realms World.  
+
+### **Revenue Allocation**
+- A **portion of transaction fees (e.g., 30%)** is allocated to the **treasury** for development.  
+- Builder incentives are **funded by inflation**, ensuring long-term sustainability.  
+
+---
+
+## **10. Sustainability & Long-Term Planning**
+- **Dynamic Emissions:**  
+  - **Adjusts inflation and token issuance** based on **network activity**.  
+- **Interoperability:**  
+  - $RW serves as the **liquidity pair for multiple game-specific tokens**.  
+- **Decentralized Infrastructure:**  
+  - Supports a **fair, scalable, and community-governed gaming ecosystem**.
