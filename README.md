@@ -45,24 +45,3 @@ An **authorized oracle** can **update the burn rate** within predefined limits, 
 ### **$LORDS Burn-to-Mint Mechanism**
 To facilitate **initial distribution** and interoperability, users can **burn $LORDS tokens** to mint an equivalent amount of **$RW tokens**, promoting collaboration between ecosystems.
 
----
-
-## Security Considerations
-
-The contract includes several **security features**:
-
-- **Controlled Inflation Application**  
-  The `apply_inflation` function can only be **called by the contract owner** and includes **time-based checks** to prevent excessive minting.
-
-- **Capped Reward Claims**  
-  **Staking rewards** are **limited to the available balance** in the **staker reward pool**, preventing over-claims.
-
-- **Restricted Burn Rate Updates**  
-  Only the **authorized oracle** can **adjust the burn rate**, and changes are constrained **within predefined minimum and maximum values**.
-
-- **Verified $LORDS Burns**  
-  The contract ensures that **$LORDS tokens** are **successfully burned** before minting new **$RW tokens**.
-
-- **Governance-Protected Builder Incentives**  
-  Mechanisms are in place to **prevent governance attacks** on builder incentives, ensuring **fair distribution**.
-
