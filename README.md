@@ -24,7 +24,7 @@ The **Realms World v2 Tokenomics contract** is an ERC-20–style token with adva
   A **designated oracle** address can **update the burn rate** within predefined limits to maintain optimal tokenomics based on network activity.
 
 - **$LORDS Burn-to-Mint Mechanism**  
-  Users can burn **$LORDS** tokens to mint new **$RW** tokens, facilitating **initial distribution** and interoperability between ecosystems.
+  Users can burn **$LORDS** tokens to mint new **$RW** tokens, facilitating **initial distribution**.
 
 ---
 
