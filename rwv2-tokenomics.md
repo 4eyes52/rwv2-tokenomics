@@ -67,6 +67,7 @@ additional_supply = (current_supply * INFLATION_RATE_BP * seconds_elapsed) / (10
 - **Since** `INFLATION_RATE_BP = 500`, we get:
 
 additional_supply = (200,000,000 * 500 * 1,000,000) / (10000 * 31,536,000) 
+
 additional_supply ≈ 317,097.92 RW
 
 **Thus, for every 1,000,000 seconds, approximately 317 RW tokens are minted** under the **5% annualized inflation model**.
