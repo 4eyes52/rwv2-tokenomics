@@ -1,60 +1,78 @@
 # Realms World v2 Tokenomics
 
-Realms World is a decentralized gaming network designed to support hundreds or thousands of games, each with its own economy. The Realms World token (**$RW**) is the foundational asset that powers the ecosystem. This repository contains the MVP smart contract implementation for Realms World tokenomics, written in Cairo 2.8.0 for deployment on StarkNet.
-
-## Overview
-
-The Realms World v2 Tokenomics contract implements an ERC-20–style token with several advanced features to support dynamic tokenomics, including:
-
-- **Adaptive Burn Mechanism:**  
-  Transfers incur a burn fee that is adjusted dynamically by an oracle based on pre-determined network metrics.
-  
-- **Per-Block Inflation:**  
-  The contract mints new tokens based on a 5% annualized inflation rate calculated per block, ensuring a controlled increase in supply over time.
-  
-- **Staking & Rewards:**  
-  Users can stake their $RW tokens to earn rewards. The contract provides functions to stake, unstake, and claim rewards based on staked amount and time.
-  
-- **Oracle Integration:**  
-  A designated oracle address can update the burn rate to maintain optimal tokenomics based on network activity.
-  
-- **$LORDS Burn:**  
-  Users  burn $LORDS tokens in a 1:1 burn-to-mint mechanism to receive new $RW tokens for initial token distribution.
-
-## Key Features
-
-- **Token Functionality:**  
-  Standard ERC-20 token operations including transfer and mint functions with an integrated adaptive burn on transfers.
-  
-- **Inflation Mechanism:**  
-  New tokens are minted based on the number of blocks elapsed since the last inflation update, following a 5% annual inflation rate.
-  
-- **Staking Module:**  
-  Allows users to lock up $RW tokens, accrue rewards over time, and claim those rewards, enhancing network participation.
-  
-- **Oracle-Driven Adjustments:**  
-  The burn rate can be dynamically updated by a trusted oracle to adapt to real-world network conditions.
-  
-- **Modular Design:**  
-  Designed as an MVP with core tokenomics logic. Additional functionality (such as treasury management or cross-game token integrations) can be developed in separate modules.
-
-## Repository Structure
-
-
-## Getting Started
-
-1. **Customization:**  
-   Adjust configuration constants (such as `INFLATION_RATE_BP`, `BLOCKS_PER_YEAR`, and `REWARD_PRECISION`) to suit your network's parameters and desired tokenomics.
-
-## Future Enhancements
-
-- **Treasury Management:**  
-  Implement additional logic for revenue allocation and ecosystem grants.
-- **Advanced Fee Mechanisms:**  
-  Integrate further deflationary measures and fee settlements across decentralized exchanges.
-- **Cross-Game Tokenomics:**  
-  Extend the model to support game-specific tokens and their interoperability with $RW.
+Realms World is a decentralized gaming network designed to support numerous games, each with its own economy. The Realms World token (**$RW**) serves as the foundational asset powering this ecosystem. This repository contains the MVP smart contract implementation for Realms World tokenomics, written in **Cairo 2** for deployment on **StarkNet**.
 
 ---
 
-This repository serves as a foundation for the Realms World ecosystem, providing a secure and efficient implementation of its core tokenomics on StarkNet.
+## Overview
+
+The **Realms World v2 Tokenomics contract** is an ERC-20–style token with advanced features to support dynamic tokenomics:
+
+- **Time-Based Inflation Mechanism**  
+  The contract mints new tokens at a **5% annualized inflation rate**, calculated based on **elapsed time rather than block count**, ensuring a controlled and predictable increase in supply.
+
+- **Staking & Rewards**  
+  Users can stake their **$RW** tokens to earn rewards. The contract provides functions to **stake, unstake, and claim rewards**, with **70%** of the newly minted tokens allocated to stakers.
+
+- **Builder Incentives**  
+  **30%** of the minted tokens are allocated to a **builder incentive pool**, rewarding developers contributing to the ecosystem.
+
+- **Adaptive Burn Mechanism**  
+  Transfers incur a **burn fee**, adjustable between **0.1% and 5%**, dynamically set by an **authorized oracle** based on network metrics.
+
+- **Oracle Integration**  
+  A **designated oracle** address can **update the burn rate** within predefined limits to maintain optimal tokenomics based on network activity.
+
+- **$LORDS Burn-to-Mint Mechanism**  
+  Users can burn **$LORDS** tokens to mint new **$RW** tokens, facilitating **initial distribution** and interoperability between ecosystems.
+
+---
+
+## Contract Features
+
+### **Time-Based Inflation**
+The contract implements a **time-based inflation mechanism**, minting new tokens at a **5% annual rate**. The `apply_inflation` function calculates **additional supply based on the elapsed time** since the last inflation application, distributing **70% to stakers** and **30% to builders**.
+
+### **Staking Mechanism**
+Users can stake their **$RW** tokens to earn rewards:
+- **Stake** → Lock a specified amount of $RW tokens to participate in the staking program.
+- **Unstake** → Withdraw a specified amount of previously staked tokens.
+- **Claim Rewards** → Retrieve accumulated rewards from the **staker reward pool**, ensuring claims **do not exceed the pool's balance**.
+
+### **Adaptive Burn Mechanism**
+Transfers of **$RW tokens incur a burn fee**, reducing the total supply.  
+The **burn rate is dynamically adjustable** between **0.1% and 5%**, set by an **authorized oracle** to respond to network conditions.
+
+### **Oracle Integration**
+An **authorized oracle** can **update the burn rate** within predefined limits, allowing the system to **adapt to changing network metrics** while maintaining stability.
+
+### **$LORDS Burn-to-Mint Mechanism**
+To facilitate **initial distribution** and interoperability, users can **burn $LORDS tokens** to mint an equivalent amount of **$RW tokens**, promoting collaboration between ecosystems.
+
+---
+
+## Security Considerations
+
+The contract includes several **security features**:
+
+- **Controlled Inflation Application**  
+  The `apply_inflation` function can only be **called by the contract owner** and includes **time-based checks** to prevent excessive minting.
+
+- **Capped Reward Claims**  
+  **Staking rewards** are **limited to the available balance** in the **staker reward pool**, preventing over-claims.
+
+- **Restricted Burn Rate Updates**  
+  Only the **authorized oracle** can **adjust the burn rate**, and changes are constrained **within predefined minimum and maximum values**.
+
+- **Verified $LORDS Burns**  
+  The contract ensures that **$LORDS tokens** are **successfully burned** before minting new **$RW tokens**.
+
+- **Governance-Protected Builder Incentives**  
+  Mechanisms are in place to **prevent governance attacks** on builder incentives, ensuring **fair distribution**.
+
+---
+
+## Deployment
+
+The contract is written in **Cairo 2** and is intended for deployment on the **StarkNet network**.  
+Ensure that you have the appropriate **development environment and dependencies** set up before deployment.
