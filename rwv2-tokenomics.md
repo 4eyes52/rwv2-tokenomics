@@ -63,9 +63,26 @@ Realms World is a decentralized gaming network designed to support hundreds or t
   - The contract calculates additional token supply based on the number of blocks elapsed since the last inflation update.
   - **Formula:**
 
-    \[
-    \text{additional\_supply} = \frac{\text{current\_supply} \times \text{INFLATION\_RATE\_BP} \times \text{blocks\_elapsed}}{10000 \times \text{BLOCKS\_PER\_YEAR}}
-    \]
+## Example Calculation:
+
+- **Assume** `current_supply = 200,000,000 RW`
+- **Assume** `blocks_elapsed = 1000`
+- **Assume** `BLOCKS_PER_YEAR = 31,536,000`
+- **Since** `INFLATION_RATE_BP = 500`, the calculation becomes:
+
+\[
+\text{additional\_supply} = \frac{200,000,000 \times 500 \times 1000}{10000 \times 31,536,000}
+\]
+
+\[
+= \frac{100,000,000,000}{315,360,000,000}
+\]
+
+\[
+= 317 RW \quad \text{(approximately)}
+\]
+
+Thus, for every **1000 blocks**, around **317 RW tokens** would be minted under the **5% annualized inflation model**.
 
 - **Constants:**
   - **INFLATION_RATE_BP:** 500 (5% annual inflation in basis points)
