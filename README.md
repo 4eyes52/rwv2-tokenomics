@@ -7,7 +7,7 @@ Realms World is a decentralized gaming network designed to support hundreds or t
 The Realms World v2 Tokenomics contract implements an ERC-20–style token with several advanced features to support dynamic tokenomics, including:
 
 - **Adaptive Burn Mechanism:**  
-  Transfers incur a burn fee that is adjusted dynamically by an oracle based on off-chain metrics.
+  Transfers incur a burn fee that is adjusted dynamically by an oracle based on pre-determined network metrics.
   
 - **Per-Block Inflation:**  
   The contract mints new tokens based on a 5% annualized inflation rate calculated per block, ensuring a controlled increase in supply over time.
